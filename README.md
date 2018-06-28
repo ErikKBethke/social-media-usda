@@ -19,7 +19,7 @@ https://github.com/ErikKBethke/social-media-usda`
 
 
 
-## File setup**
+## File setup
 1. Training data text files [neg_tweets.txt, pos_tweets.txt] must be in the root folder
 2. The python file Twitter_Sentiment_ETL.py must be in the root folder
 3. The USDA Twitter data feed must come in formatting established by PJ, and must have "Twitter_Full" in the file name. This file must be in the root folder
