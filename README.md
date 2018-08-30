@@ -35,5 +35,4 @@ https://github.com/ErikKBethke/social-media-usda`
 
 ### Notes/To-Do
 1. Improve training data to be more catered to USDA tweet Language
-2. Improve automation
-3. Better read/write functionality for data
+2. Improve automation (build into 1 module)

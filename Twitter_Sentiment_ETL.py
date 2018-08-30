@@ -1,12 +1,18 @@
 
 # coding: utf-8
 
+# In[124]:
+
+
+
+# coding: utf-8
+
 # # USDA Twitter Sentiment Analysis
 
 # Performs sentiment analysis on Twitter data mentions of various USDA accounts
 # 
 # Author: Erik Bethke
-# Last modified: 6.14.18
+# Last modified: 7.30.18
 
 # ## Installation of nltk and data
 
@@ -15,9 +21,6 @@
 # sudo python3 -m nltk.downloader all
 
 # Importing modules and basic functions
-
-# In[282]:
-
 
 # Import modules for analysis
 import nltk
@@ -44,9 +47,6 @@ def format_sentence(sent):
 
 # ### Import positive tweet training data
 
-# In[5]:
-
-
 pos = []
 with open("./pos_tweets.txt") as f:
     for i in f:
@@ -55,73 +55,26 @@ with open("./pos_tweets.txt") as f:
 
 # ### Import negative tweet training data
 
-# In[6]:
-
-
 #Establish negative tweet trainig dat
 neg = []
 with open("./neg_tweets.txt", encoding='utf-8') as f:
     for i in f:
         neg.append([format_sentence(i), 'neg'])
 
-
-# Split labeled training data into the training and test data (80/20 split)
-
-# In[7]:
-
-
-training = pos[:int((.8)*len(pos))] + neg[:int((.8)*len(neg))]
-test = pos[int((.8)*len(pos)):] + neg[int((.8)*len(neg)):]
+all_training = pos + neg
 print("Building training data...")
 
 
 # ### Build classifier
 
-# In[8]:
-
-
-classifier = NaiveBayesClassifier.train(training)
+classifier = NaiveBayesClassifier.train(all_training)
 print("Building classifier...")
-
-
-# Simple display of informative features from the training data (just for understanding)
-
-# In[9]:
-
-
-#classifier.show_most_informative_features()
-
-
-# ### Test training data against a text string
-
-# Simply for showing it works
-
-# In[10]:
-
-
-#example_pos = ("What a great date")
-#example_neg = ("Don't trust anyone!")
-
-#print('This example is positive and results in: ' + classifier.classify(format_sentence(example_pos)))
-#print('This example is negative and results in: ' + classifier.classify(format_sentence(example_neg)))
-
-
-# See the accuracy of our test data
-
-# In[11]:
-
-
-#print(accuracy(classifier, test))
-
 
 # ## USDA Twitter Data
 
 # ### Import USDA Twitter Data
 
 # Opening in pandas dataframe
-
-# In[270]:
-
 
 print("Importing Twitter Data...")
 csv = glob.glob('*Twitter_Full*')
@@ -135,24 +88,18 @@ df = pd.read_csv(csv, sep='|', error_bad_lines=False, warn_bad_lines=True, encod
 
 # Creating a data frame to hold the file name and date, to check against existing data in master list (and later for export)
 
-# In[345]:
-
-
 df_fileList = pd.DataFrame(columns = ['FileName', 'Date'])
 df_fileList.loc[(len(df_fileList))] = [csv, dmy]
 
 
 # Checking for Twitter Master, then checking if analysis has already been completed
 
-# In[363]:
-
-
 master = Path('./Twitter_Master.xlsx')
 if master.is_file():
     print('Comparing file to list of completed sentiment analyses for duplicates...')
     # Read master file list, append df_fileList to master list
     df_master_fileList = pd.read_excel(master, 'Sheet2', index=False)
-    if (df_master_fileList['FileName'].str.contains(csv).sum() > 0 and df_master_fileList['Date'].str.contains(dmy).sum()):
+    if (df_master_fileList['FileName'].str.contains(csv).sum() > 0):
         print('Sentiment analysis already completed on this file. Exiting...')
         print('Please remove duplicate file from root directory.')
         sys.exit()
@@ -164,10 +111,6 @@ else:
 
 # Run classifier on tweet texts, check for errors
 
-# In[255]:
-
-
-#classifier.classify(df['nltk'])
 tweetSentiment = []
 for tweet in df['tweetText']:
     try:
@@ -178,17 +121,23 @@ for tweet in df['tweetText']:
 
 # Push tweetSentiment to dataframe
 
-# In[256]:
-
-
 df['tweetSentiment'] = tweetSentiment
 df = df.fillna('')
 
 
+
+
+# In[128]:
+
+
+# Filter for only yesterday's data to avoid duplicate date data
+df = df[df['tweetDate'] == (datetime.date.today() - datetime.timedelta(1)).strftime('%m-%d-%Y')]
+
+
+# In[129]:
+
+
 # ### Import stopwords data and push to data frame
-
-# In[257]:
-
 
 print('Importing stopwords...')
 df_stop = pd.read_excel('./stopwords.xlsx', header=None, names=['stop'])
@@ -196,18 +145,12 @@ df_stop = pd.read_excel('./stopwords.xlsx', header=None, names=['stop'])
 
 # Push to list
 
-# In[258]:
-
-
 stopList = df_stop['stop'].values.tolist()
 
 
 # ### Split tweet text, create new dataframe for each word in each tweet with associated sentiment
 
 # Prepare new dataframe df_word for words
-
-# In[259]:
-
 
 # New dataframe for individual words
 df_word_cols = list(df.columns)
@@ -220,9 +163,6 @@ wordList = df['tweetText'].str.split(' ')
 
 
 # Populate dataframe df_word
-
-# In[260]:
-
 
 df_word_vals = []
 df_loc = 0
@@ -262,20 +202,18 @@ for words in wordList:
                 df_word.at[word_loc, 'tweetWord'] = wordDrop
             word_loc += 1
     df_loc += 1
+    
+print("Word file parsed...")
 
 
 # Combine all columns into 1 for improved filesize
 
-# In[261]:
+df_word['UID'] = (df_word.index + 1).astype(str) + '-' +  df_word['tweetDate']
 
-
-df_word_out = df_word[['tweetId', 'tweetDate', 'tweetWord', 'tweetSentiment']].copy()
+df_word_out = df_word[['UID', 'tweetId', 'tweetDate', 'tweetWord', 'tweetSentiment']].copy()
 
 
 # Outputting to CSV, archives Full_Data, Sentence Sentiment, and Word Sentiment appropriately
-
-# In[279]:
-
 
 print("Writing output files...")
 df.to_csv('./archive/Sentence_Sentiment/Twitter_PythonSentiment_' + dmy + '.csv', encoding='utf-8', index=False)
@@ -286,9 +224,6 @@ shutil.move(csv, './archive/Full_Data/')
 # ### Exporting to Master Data
 
 # Check for Twitter_Master Excel, then write to appropriate locations
-
-# In[344]:
-
 
 master = Path('./Twitter_Master.xlsx')
 if master.is_file():
