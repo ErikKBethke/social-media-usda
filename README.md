@@ -29,10 +29,10 @@ https://github.com/ErikKBethke/social-media-usda`
 2. USDA social media data is pulled into a pandas data frame
 3. The Naive Bayes classification runs sentiment analysis on each Tweet, and sentiment is appended to the data frame
 4. Each sentence is parsed through, creating a new data frame that contains rows for each word of every Tweet with associated data (sentiment, date, etc.)
-5. Two files are output:
+5. Three files are output:
 * Twitter_PythonSentiment_DATE.csv contains rows for each sentence
 * Twitter_PythonSentiment_Word_DATE.csv contains rows for each word
+* Twitter_Master containing all dates' data
 
 ### Notes/To-Do
 1. Improve training data to be more catered to USDA tweet Language
-2. Improve automation (build into 1 module)
